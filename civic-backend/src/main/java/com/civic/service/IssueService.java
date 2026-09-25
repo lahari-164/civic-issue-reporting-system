@@ -1,0 +1,156 @@
+package com.civic.service;
+
+import com.civic.dto.*;
+import com.civic.entity.*;
+import com.civic.enums.Category;
+import com.civic.enums.Status;
+import com.civic.repository.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+public class IssueService {
+
+    private final IssueRepository issueRepository;
+    private final UpvoteRepository upvoteRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final OfficerRepository officerRepository;
+    private final FileStorageService fileStorageService;
+
+    public IssueService(IssueRepository issueRepository, UpvoteRepository upvoteRepository,
+                         CommentRepository commentRepository, UserRepository userRepository,
+                         OfficerRepository officerRepository, FileStorageService fileStorageService) {
+        this.issueRepository = issueRepository;
+        this.upvoteRepository = upvoteRepository;
+        this.commentRepository = commentRepository;
+        this.userRepository = userRepository;
+        this.officerRepository = officerRepository;
+        this.fileStorageService = fileStorageService;
+    }
+
+    public Issue createIssue(IssueRequest req, MultipartFile photo, String reporterEmail) {
+        User reporter = userRepository.findByEmail(reporterEmail).orElseThrow();
+        Issue issue = new Issue();
+        issue.setTitle(req.getTitle());
+        issue.setDescription(req.getDescription());
+        issue.setCategory(Category.valueOf(req.getCategory()));
+        issue.setCity(req.getCity());
+        issue.setLocation(req.getLocation());
+        issue.setPhotoUrl(fileStorageService.store(photo));
+        issue.setReportedBy(reporter);
+
+        List<Officer> categoryOfficers = officerRepository.findByCategoryOrderByIdAsc(issue.getCategory());
+        if (!categoryOfficers.isEmpty()) {
+            long issuesSoFarInCategory = issueRepository.countByCategory(issue.getCategory());
+            int index = (int) (issuesSoFarInCategory % categoryOfficers.size());
+            issue.setAssignedOfficer(categoryOfficers.get(index));
+        }
+        return issueRepository.save(issue);
+    }
+
+    public List<Issue> getAllIssues() {
+        return issueRepository.findAll();
+    }
+
+    public Issue getIssue(Long id) {
+        return issueRepository.findById(id).orElseThrow();
+    }
+
+    // Public-facing (no reporter identity)
+    public List<PublicIssueResponse> getAllIssuesPublic() {
+        return issueRepository.findAll().stream().map(PublicIssueResponse::from).toList();
+    }
+
+    public PublicIssueResponse getIssuePublic(Long id) {
+        return PublicIssueResponse.from(getIssue(id));
+    }
+
+    public List<Issue> getMyIssues(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow();
+        return issueRepository.findByReportedBy(user);
+    }
+
+    public long getUpvoteCount(Issue issue) {
+        return upvoteRepository.countByIssue(issue);
+    }
+
+    // Toggle: returns true if now upvoted, false if the upvote was just removed
+    public boolean toggleUpvote(Long issueId, String email) {
+        Issue issue = getIssue(issueId);
+        User user = userRepository.findByEmail(email).orElseThrow();
+        var existing = upvoteRepository.findByIssueAndUser(issue, user);
+        if (existing.isPresent()) {
+            upvoteRepository.delete(existing.get());
+            return false;
+        }
+        Upvote upvote = new Upvote();
+        upvote.setIssue(issue);
+        upvote.setUser(user);
+        upvoteRepository.save(upvote);
+        return true;
+    }
+
+    public boolean hasUserUpvoted(Long issueId, String email) {
+        Issue issue = getIssue(issueId);
+        User user = userRepository.findByEmail(email).orElseThrow();
+        return upvoteRepository.findByIssueAndUser(issue, user).isPresent();
+    }
+
+    public Comment addComment(Long issueId, String text, String email) {
+        Issue issue = getIssue(issueId);
+        User user = userRepository.findByEmail(email).orElseThrow();
+        Comment comment = new Comment();
+        comment.setIssue(issue);
+        comment.setUser(user);
+        comment.setText(text);
+        return commentRepository.save(comment);
+    }
+
+    public List<Comment> getComments(Long issueId) {
+        return commentRepository.findByIssueOrderByCreatedAtAsc(getIssue(issueId));
+    }
+
+    // OFFICER (no reporter identity)
+    public List<OfficerIssueResponse> getIssuesForOfficerView(String email) {
+        Officer officer = officerRepository.findByEmail(email).orElseThrow();
+        return issueRepository.findByCategory(officer.getCategory())
+                .stream().map(OfficerIssueResponse::from).toList();
+    }
+
+    public Issue updateStatus(Long issueId, StatusUpdateRequest req) {
+        Issue issue = getIssue(issueId);
+        issue.setStatus(Status.valueOf(req.getStatus()));
+        if (req.getResolutionNote() != null) issue.setResolutionNote(req.getResolutionNote());
+        issue.setUpdatedAt(LocalDateTime.now());
+        return issueRepository.save(issue);
+    }
+
+    // ADMIN
+    public void deleteIssue(Long id) {
+        issueRepository.deleteById(id);
+    }
+
+    public Issue reassignCategory(Long id, String category) {
+        Issue issue = getIssue(id);
+        issue.setCategory(Category.valueOf(category));
+        List<Officer> categoryOfficers = officerRepository.findByCategoryOrderByIdAsc(issue.getCategory());
+        if (!categoryOfficers.isEmpty()) issue.setAssignedOfficer(categoryOfficers.get(0));
+        return issueRepository.save(issue);
+    }
+
+    public Officer createOfficer(OfficerCreateRequest req, org.springframework.security.crypto.password.PasswordEncoder encoder) {
+        Officer officer = new Officer();
+        officer.setName(req.getName());
+        officer.setEmail(req.getEmail());
+        officer.setPassword(encoder.encode(req.getPassword()));
+        officer.setCategory(Category.valueOf(req.getCategory()));
+        return officerRepository.save(officer);
+    }
+
+    public List<Officer> getOfficers() {
+        return officerRepository.findAll();
+    }
+}

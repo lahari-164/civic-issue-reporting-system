@@ -1,0 +1,12 @@
+package com.civic.dto;
+
+import lombok.Data;
+
+@Data
+public class IssueRequest {
+    private String title;
+    private String description;
+    private String category;
+    private String city;
+    private String location;
+}

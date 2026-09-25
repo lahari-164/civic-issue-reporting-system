@@ -1,0 +1,22 @@
+### Java / Spring Boot (civic-backend) ###
+civic-backend/target/
+civic-backend/.mvn/wrapper/maven-wrapper.jar
+civic-backend/.settings/
+civic-backend/.classpath
+civic-backend/.project
+civic-backend/.factorypath
+civic-backend/uploads/*
+!civic-backend/uploads/.gitkeep
+
+### Angular (civic-frontend) ###
+civic-frontend/node_modules/
+civic-frontend/dist/
+civic-frontend/.angular/
+civic-frontend/.vscode/
+
+### General ###
+*.log
+.DS_Store
+Thumbs.db
+*.iml
+.idea/

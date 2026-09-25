@@ -1,0 +1,29 @@
+package com.civic.controller;
+
+import com.civic.dto.StatusUpdateRequest;
+import com.civic.entity.Issue;
+import com.civic.service.IssueService;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/officer")
+public class OfficerController {
+
+    private final IssueService issueService;
+
+    public OfficerController(IssueService issueService) {
+        this.issueService = issueService;
+    }
+
+    @GetMapping("/issues")
+    public List<OfficerIssueResponse> myCategoryIssues(Authentication auth) {
+        return issueService.getIssuesForOfficerView(auth.getName());
+    }
+
+    @PutMapping("/issues/{id}/status")
+    public Issue updateStatus(@PathVariable Long id, @RequestBody StatusUpdateRequest req) {
+        return issueService.updateStatus(id, req);
+    }
+}

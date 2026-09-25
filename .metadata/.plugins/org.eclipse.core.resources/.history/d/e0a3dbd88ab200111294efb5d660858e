@@ -1,0 +1,5 @@
+package com.civic.repository;
+
+public interface IssueRepository {
+
+}
