@@ -7,7 +7,6 @@ import com.civic.entity.User;
 import com.civic.service.IssueService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import com.civic.dto.AdminIssueResponse;
 import java.util.List;
 import java.util.Map;
 

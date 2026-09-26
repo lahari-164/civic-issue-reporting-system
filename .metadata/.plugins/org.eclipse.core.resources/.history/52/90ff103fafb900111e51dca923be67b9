@@ -153,7 +153,4 @@ public class IssueService {
     public List<Officer> getOfficers() {
         return officerRepository.findAll();
     }
-    public List<AdminIssueResponse> getAllIssuesAdmin() {
-        return issueRepository.findAll().stream().map(AdminIssueResponse::from).toList();
-    }
 }
