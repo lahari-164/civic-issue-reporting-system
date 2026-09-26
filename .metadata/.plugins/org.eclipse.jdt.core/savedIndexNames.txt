@@ -11,7 +11,6 @@ INDEX VERSION 1.134+C:\Civic Issue Reporting System\.metadata\.plugins\org.eclip
 4049073932.index
 4212341588.index
 2717570895.index
-4109805725.index
 3292264262.index
 329751542.index
 3903128767.index

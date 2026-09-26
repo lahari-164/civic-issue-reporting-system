@@ -1,7 +1,6 @@
 package com.civic.repository;
 
 import com.civic.entity.Issue;
-import com.civic.entity.Officer;
 import com.civic.enums.Category;
 import com.civic.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,5 +11,4 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
     List<Issue> findByReportedBy(User user);
     List<Issue> findByAssignedOfficer(User officer);
     long countByCategory(Category category);
-    List<Issue> findByAssignedOfficer(Officer officer);
 }

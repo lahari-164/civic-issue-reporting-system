@@ -113,9 +113,10 @@ public class IssueService {
         return commentRepository.findByIssueOrderByCreatedAtAsc(getIssue(issueId));
     }
 
+    // OFFICER (no reporter identity)
     public List<OfficerIssueResponse> getIssuesForOfficerView(String email) {
         Officer officer = officerRepository.findByEmail(email).orElseThrow();
-        return issueRepository.findByAssignedOfficer(officer)
+        return issueRepository.findByCategory(officer.getCategory())
                 .stream().map(OfficerIssueResponse::from).toList();
     }
 
